@@ -148,7 +148,7 @@ async def on_message(message):
         if not scInCache(message.guild, message.channel):
             print('%s not in cache. Caching %d messages from history.' % (message.channel, cachesize))
             appendSc(message.guild, message.channel)   
-            await markovcache(message.channel.history(limit=cachesize))
+            await markovcache(message.channel)
         elif not message.content.startswith('.'):
             with open(textfile, "a") as f:
                 if message.content:
@@ -162,7 +162,6 @@ async def on_message(message):
 
     args = message.content.lower().split(' ')
 
-    #if message.content[:8].lower() == 'hey bara' or message.content[:4].lower() == 'bara' or message.content[:4].lower() == 'yeen':
     if args[0] == command or args[0] == altcommand:
         sentence = await markov()
         sentence = re.sub(r'<@.*>', '', sentence)
@@ -202,10 +201,16 @@ async def markov():
         m = model.make_sentence()
     return m
 
-async def markovcache(msgs):
-    with open(textfile, "a") as f:
-        async for msg in msgs:
-            f.write('%s\n' % msg.content)
+async def markovcache(channel):
+    msgs = await channel.history(limit=cachesize).flatten()
+
+    o = ""
+    for msg in msgs:
+        content = msg.content
+        o += '%s\n' % content
+
+    with open(textfile, "a+") as f:
+        f.write(o)
 
 with open(tokenfile) as f:
     bottoken = f.read()
