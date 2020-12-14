@@ -97,7 +97,7 @@ def getRandomUrl(server, channel):
     if serv == None:
         return ""
     else:
-        should = random.choices([True, False], cum_weights=(3, 75))[0]
+        should = random.choices([True, False], cum_weights=(7, 75))[0]
         if should:
             return random.choice(cached[serv]['urls'])
         else:
