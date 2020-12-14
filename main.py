@@ -1,4 +1,4 @@
-import discord, markovify, asyncio, json, re
+import discord, markovify, asyncio, json, re, os
 
 ##########
 # CONFIG #
@@ -169,8 +169,26 @@ async def on_message(message):
         await message.channel.send(sentence)
     elif args[0] == '.mkstats':
         lines = getLinesNo()
+        filesizeB = os.stat(textfile).st_size
+        filesizeK = filesizeB // 1024
+        filesizeM = filesizeK // 1024
+        filesizeG = filesizeM // 1024
+        suffix = 'B'
+
+        if filesizeG:
+            filesize = filesizeG
+            suffix = 'GiB'
+        elif filesizeM:
+            filesize = filesizeM
+            suffix = 'MiB'
+        elif filesizeK:
+            filesize = filesizeK
+            suffix = 'KiB'
+        else:
+            filesize = filesizeB
+
         channels_cached = getChannelMentions(message.guild).strip()
-        await message.channel.send('I have `%d` lines of random messages :)\n\nI have those channels cached:\n%s' % (lines, channels_cached))
+        await message.channel.send('I have `%d` lines of random messages :)\nThey weigh %d%s\n\nI have those channels cached:\n%s' % (lines, filesize, suffix, channels_cached))
     elif args[0] == '.mkblacklist':
         if len(args) == 2:
             if message.author.guild_permissions.administrator or message.author.id == ownerid:
