@@ -30,6 +30,29 @@ altcommand = ".mk"
 
 client = discord.Client()
 
+def _close(msg, w):
+    if msg.startswith(w):
+        msg = msg + w
+    elif msg.endswith(w):
+        msg = w + msg
+
+    return msg
+
+def closeSpecial(msg):
+    toclose = [
+        '||',
+        '```',
+        '`',
+        '"',
+        '\'',
+        '~~'
+    ]
+
+    for c in toclose:
+        msg = _close(msg, c)
+
+    return msg
+
 def getLinesNo():
     with open(textfile) as f:
         return sum(1 for _ in f)
@@ -213,6 +236,7 @@ async def on_message(message):
     if args[0] == command or args[0] == altcommand:
         sentence = await markov()
         sentence = re.sub(r'<@.*>', '', sentence)
+        sentence = closeSpecial(sentence)
         rand_url = getRandomUrl(message.guild, message.channel)
         if rand_url:
             sentence = '%s\n%s' % (sentence, rand_url)
