@@ -1,4 +1,4 @@
-import discord, markovify, asyncio, json, re, os
+import discord, markovify, asyncio, json, re, os, random
 
 ##########
 # CONFIG #
@@ -55,6 +55,42 @@ def scInCache(server, channel):
                     return True
     return False
 
+def appendUrl(server, channel, url):
+    cached = getCached()
+    serv = None
+
+    for i, s in enumerate(cached):
+        if s['id'] == server.id:
+            serv = i
+            break
+
+    if serv == None:
+        return False
+    else:
+        cached[serv]['urls'].append(url)
+
+    setCached(cached)
+    return True
+
+def getRandomUrl(server, channel):
+    cached = getCached()
+    serv = None
+
+    for i, s in enumerate(cached):
+        if s['id'] == server.id:
+            serv = i
+            break
+    
+    if serv == None:
+        return ""
+    else:
+        should = random.choices([True, False], cum_weights=(3, 75))[0]
+        if should:
+            return random.choice(cached[serv]['urls'])
+        else:
+            return ""
+
+
 def appendSc(server, channel):
     cached = getCached()
     serv = None
@@ -64,12 +100,11 @@ def appendSc(server, channel):
             serv = i
             break
     if serv == None:
-        serv = {"id": server.id, "channels": [channel.id], "blacklist": []}
+        serv = {"id": server.id, "channels": [channel.id], "blacklist": [], "urls": []}
         cached.append(serv)
     else:
         cached[serv]['channels'].append(channel.id)
 
-    print(cached)
     setCached(cached)
 
 def isBlacklisted(server, channel):
@@ -147,7 +182,7 @@ async def on_message(message):
     if not isBlacklisted(message.guild, message.channel):
         if not scInCache(message.guild, message.channel):
             print('%s not in cache. Caching %d messages from history.' % (message.channel, cachesize))
-            appendSc(message.guild, message.channel)   
+            appendSc(message.guild, message.channel)
             await markovcache(message.channel)
         elif not message.content.startswith('.'):
             with open(textfile, "a") as f:
@@ -158,18 +193,22 @@ async def on_message(message):
                     attachment = message.attachments[0]
                     url = attachment.url
                     print('Appending url %s' % url)
-                    f.write('%s\n' % url)
+                    appendUrl(message.guild, message.channel, url)
 
     args = message.content.lower().split(' ')
 
     if args[0] == command or args[0] == altcommand:
         sentence = await markov()
         sentence = re.sub(r'<@.*>', '', sentence)
+        rand_url = getRandomUrl(message.guild, message.channel)
+        if rand_url:
+            sentence = '%s\n%s' % (sentence, rand_url)
         print('Sending "%s" to %s' % (sentence, message.channel.name))
         await message.channel.send(sentence)
     elif args[0] == '.mkstats':
         lines = getLinesNo()
-        filesizeB = os.stat(textfile).st_size
+        links = getLinksNo(message.guild)
+        filesizeB = os.stat(textfile).st_size + os.stat(cachefile).st_size
         filesizeK = filesizeB // 1024
         filesizeM = filesizeK // 1024
         filesizeG = filesizeM // 1024
