@@ -46,6 +46,19 @@ def setCached(c):
     with open(cachefile, "w") as f:
         f.write(json.dumps(c))
 
+def getLinksNo(server):
+    cached = getCached()
+    serv = None
+
+    for i, s in enumerate(cached):
+        if s['id'] == server.id:
+            serv = i
+            break
+    if serv == None:
+        return 0
+    else:
+        return sum(1 for _ in cached[serv]['urls'])
+
 def scInCache(server, channel):
     cached = getCached()
     for s in cached:
@@ -227,7 +240,7 @@ async def on_message(message):
             filesize = filesizeB
 
         channels_cached = getChannelMentions(message.guild).strip()
-        await message.channel.send('I have `%d` lines of random messages :)\nThey weigh %d%s\n\nI have those channels cached:\n%s' % (lines, filesize, suffix, channels_cached))
+        await message.channel.send('I have `%d` lines of random messages and `%d` links :)\nThey weigh %d%s\n\nI have those channels cached:\n%s' % (lines, links, filesize, suffix, channels_cached))
     elif args[0] == '.mkblacklist':
         if len(args) == 2:
             if message.author.guild_permissions.administrator or message.author.id == ownerid:
